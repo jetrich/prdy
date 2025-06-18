@@ -4,6 +4,10 @@ Command Line Interface for PRDY
 
 import click
 import questionary
+import subprocess
+import sys
+import os
+from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -433,6 +437,29 @@ def ai():
 
 
 @ai.command()
+def status():
+    """Show current AI provider status"""
+    ai_integration = AIIntegration()
+    
+    console.print(Panel.fit("🤖 AI Provider Status", style="bold blue"))
+    
+    console.print(f"[bold]Current Provider:[/bold] {ai_integration.current_provider.value}")
+    console.print(f"[bold]Current Environment:[/bold] {ai_integration.current_environment or 'None'}")
+    
+    # Show available environments
+    configs = ai_integration.env_manager._load_all_configs()
+    
+    if configs:
+        console.print("\n[bold]Available Environments:[/bold]")
+        for env_name, env_config in configs.items():
+            status = "✅ Active" if env_name == ai_integration.current_environment else "💤 Available"
+            console.print(f"  {status} {env_name} ({env_config['ai_provider']})")
+    else:
+        console.print("\n[bold]Available Environments:[/bold] None configured")
+        console.print("💡 Run 'prdy ai setup' to configure an AI provider")
+
+
+@ai.command()
 def setup():
     """Set up AI environment (Claude Code or Ollama)"""
     console.print(Panel.fit("🤖 AI Environment Setup", style="bold blue"))
@@ -528,6 +555,7 @@ def test():
     
     if ai_integration.current_provider == AIProvider.NONE:
         console.print("❌ No AI provider configured", style="red")
+        console.print("💡 Run 'prdy ai setup' first to configure an AI provider", style="blue")
         return
     
     console.print(f"🧪 Testing {ai_integration.current_provider.value}...")
@@ -547,6 +575,165 @@ def test():
     else:
         console.print("❌ AI provider test failed", style="red")
         console.print(f"Error: {response.content}")
+        
+        # Provide specific troubleshooting for Claude Code
+        if ai_integration.current_provider == AIProvider.CLAUDE_CODE:
+            console.print("\n🔧 Claude Code troubleshooting:", style="yellow")
+            console.print("1. Make sure you're logged into Claude Code:")
+            console.print("   npx @anthropic-ai/claude-code auth login")
+            console.print("2. Check your environment with:")
+            console.print("   prdy ai claude-info")
+            console.print("3. Test Claude Code directly:")
+            console.print("   prdy ai claude-test")
+
+
+@ai.command()
+def claude_info():
+    """Show Claude Code environment information"""
+    ai_integration = AIIntegration()
+    env_config = ai_integration.env_manager.get_environment("claude-code")
+    
+    if not env_config:
+        console.print("❌ Claude Code environment not set up", style="red")
+        console.print("💡 Run 'prdy ai setup' to configure Claude Code", style="blue")
+        return
+    
+    console.print(Panel.fit("📋 Claude Code Environment Info", style="bold blue"))
+    
+    env_path = Path(env_config.environment_path)
+    console.print(f"[bold]Environment Path:[/bold] {env_path}")
+    console.print(f"[bold]Node Version:[/bold] {env_config.node_version}")
+    console.print(f"[bold]Claude Code Version:[/bold] {env_config.claude_code_version}")
+    
+    # Check if files exist
+    package_json = env_path / "package.json"
+    node_modules = env_path / "node_modules"
+    wrapper_bat = env_path / "claude-wrapper.bat"
+    wrapper_sh = env_path / "claude-wrapper.sh"
+    
+    console.print("\n[bold]File Status:[/bold]")
+    console.print(f"✅ package.json: {'✓' if package_json.exists() else '✗'}")
+    console.print(f"✅ node_modules: {'✓' if node_modules.exists() else '✗'}")
+    console.print(f"✅ Windows wrapper: {'✓' if wrapper_bat.exists() else '✗'}")
+    console.print(f"✅ Unix wrapper: {'✓' if wrapper_sh.exists() else '✗'}")
+    
+    # Test Claude Code CLI availability
+    try:
+        if os.name == "nt":
+            claude_cmd = env_path / "node_modules" / ".bin" / "claude.cmd"
+        else:
+            claude_cmd = env_path / "node_modules" / ".bin" / "claude"
+        
+        if claude_cmd.exists():
+            console.print(f"✅ Claude CLI: Available at {claude_cmd}")
+        else:
+            console.print("❌ Claude CLI: Not found")
+    except Exception as e:
+        console.print(f"❌ Error checking Claude CLI: {e}")
+
+
+@ai.command()
+def claude_test():
+    """Test Claude Code directly without PRDY integration"""
+    ai_integration = AIIntegration()
+    env_config = ai_integration.env_manager.get_environment("claude-code")
+    
+    if not env_config:
+        console.print("❌ Claude Code environment not set up", style="red")
+        return
+    
+    console.print("🧪 Testing Claude Code directly...")
+    
+    try:
+        env_path = Path(env_config.environment_path)
+        
+        # Test basic Claude Code command
+        if os.name == "nt":
+            wrapper = env_path / "claude-wrapper.bat"
+        else:
+            wrapper = env_path / "claude-wrapper.sh"
+        
+        if not wrapper.exists():
+            console.print("❌ Claude wrapper script not found", style="red")
+            return
+        
+        # Test with a simple command
+        test_commands = [
+            ["--version"],
+            ["--help"],
+        ]
+        
+        for cmd_args in test_commands:
+            console.print(f"Testing: claude {' '.join(cmd_args)}")
+            
+            try:
+                result = subprocess.run(
+                    [str(wrapper)] + cmd_args,
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                
+                if result.returncode == 0:
+                    console.print(f"✅ Command succeeded", style="green")
+                    if result.stdout:
+                        console.print(f"Output: {result.stdout[:200]}...")
+                else:
+                    console.print(f"❌ Command failed (code {result.returncode})", style="red")
+                    if result.stderr:
+                        console.print(f"Error: {result.stderr[:200]}...")
+                        
+            except subprocess.TimeoutExpired:
+                console.print("⏰ Command timed out", style="yellow")
+            except Exception as e:
+                console.print(f"❌ Error running command: {e}", style="red")
+            
+            console.print()
+    
+    except Exception as e:
+        console.print(f"❌ Error during Claude Code test: {e}", style="red")
+
+
+@ai.command()
+def claude_login():
+    """Help with Claude Code authentication"""
+    ai_integration = AIIntegration()
+    env_config = ai_integration.env_manager.get_environment("claude-code")
+    
+    if not env_config:
+        console.print("❌ Claude Code environment not set up", style="red")
+        console.print("💡 Run 'prdy ai setup' first", style="blue")
+        return
+    
+    console.print(Panel.fit("🔐 Claude Code Authentication", style="bold blue"))
+    console.print("To use Claude Code, you need to authenticate with Anthropic.")
+    console.print("\n[bold]Steps:[/bold]")
+    console.print("1. Make sure you have a Claude Code subscription")
+    console.print("2. Run the authentication command:")
+    
+    env_path = Path(env_config.environment_path)
+    if os.name == "nt":
+        console.print(f"   cd {env_path}")
+        console.print("   npx @anthropic-ai/claude-code auth login")
+    else:
+        console.print(f"   cd {env_path}")
+        console.print("   npx @anthropic-ai/claude-code auth login")
+    
+    console.print("\n3. Follow the prompts to complete authentication")
+    console.print("4. Test with: prdy ai claude-test")
+    
+    if questionary.confirm("Would you like to open the Claude Code directory now?").ask():
+        try:
+            if os.name == "nt":
+                os.startfile(env_path)
+            elif sys.platform == "darwin":
+                subprocess.run(["open", str(env_path)])
+            else:
+                subprocess.run(["xdg-open", str(env_path)])
+            console.print("✅ Directory opened", style="green")
+        except Exception as e:
+            console.print(f"❌ Could not open directory: {e}", style="red")
+            console.print(f"Manual path: {env_path}")
 
 
 if __name__ == "__main__":
