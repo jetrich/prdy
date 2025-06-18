@@ -162,10 +162,16 @@ def conduct_interview(session_id: int):
     
     # Initialize question engine
     question_engine = QuestionEngine()
+    
+    # Convert string values back to enums
+    product_type = ProductType(session.product_type)
+    industry_type = IndustryType(session.industry_type)
+    complexity_level = ComplexityLevel(session.complexity_level)
+    
     questions = question_engine.get_questions_for_product(
-        session.product_type,
-        session.industry_type, 
-        session.complexity_level
+        product_type,
+        industry_type, 
+        complexity_level
     )
     
     answers = {}
