@@ -128,6 +128,13 @@ sudo dnf install python3-devel python3-venv
 brew install python
 ```
 
+**Issue: Corrupted virtual environment**
+```bash
+# Clean and reinstall
+./clean.sh          # Remove old environment
+./setup.sh          # Fresh installation
+```
+
 ## Quick Start
 
 ### Create a New PRD
