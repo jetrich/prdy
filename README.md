@@ -39,21 +39,94 @@
 
 ## Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/jetrich/prdy.git
-   cd prdy
-   ```
+### 🚀 **One-Command Setup (Recommended)**
 
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+**Linux/macOS:**
+```bash
+git clone https://github.com/jetrich/prdy.git
+cd prdy
+./setup.sh
+```
 
-3. **Install the package**:
-   ```bash
-   pip install -e .
-   ```
+**Windows:**
+```cmd
+git clone https://github.com/jetrich/prdy.git
+cd prdy
+setup.bat
+```
+
+### 🐍 **Manual Virtual Environment Setup**
+```bash
+git clone https://github.com/jetrich/prdy.git
+cd prdy
+
+# Create and activate virtual environment
+python3 -m venv prdy-env
+source prdy-env/bin/activate  # On Windows: prdy-env\Scripts\activate
+
+# Install dependencies and package
+pip install -r requirements.txt
+pip install -e .
+```
+
+### 🚀 **Alternative Installation Methods**
+
+**Option 1: Using pipx (Isolated)**
+```bash
+pipx install git+https://github.com/jetrich/prdy.git
+```
+
+**Option 2: System-wide (Debian/Ubuntu)**
+```bash
+git clone https://github.com/jetrich/prdy.git
+cd prdy
+pip install -r requirements.txt --break-system-packages
+pip install -e . --break-system-packages
+```
+
+**Option 3: Using uv (Fastest)**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+uv pip install -e .
+```
+
+### 🔧 **Installation Troubleshooting**
+
+**Issue: `externally-managed-environment` error on Debian/Ubuntu**
+```bash
+# Solution 1: Use virtual environment (recommended)
+python3 -m venv prdy-env
+source prdy-env/bin/activate
+pip install -r requirements.txt
+
+# Solution 2: Use --break-system-packages flag
+pip install -r requirements.txt --break-system-packages
+
+# Solution 3: Use pipx for isolation
+pipx install git+https://github.com/jetrich/prdy.git
+```
+
+**Issue: Permission denied errors**
+```bash
+# Use --user flag to install in user directory
+pip install -r requirements.txt --user
+pip install -e . --user
+```
+
+**Issue: Missing Python development headers**
+```bash
+# Ubuntu/Debian
+sudo apt install python3-dev python3-venv
+
+# CentOS/RHEL/Fedora  
+sudo dnf install python3-devel python3-venv
+
+# macOS (using Homebrew)
+brew install python
+```
 
 ## Quick Start
 

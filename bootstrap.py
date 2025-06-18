@@ -62,23 +62,39 @@ def install_dependencies():
     print("\n📦 Installing Python dependencies...")
     
     try:
-        # Try different pip commands
-        pip_commands = ["pip", "pip3", f"{sys.executable} -m pip"]
+        # Try different pip commands with fallback options
+        pip_commands = [
+            f"{sys.executable} -m pip install -r requirements.txt",
+            f"{sys.executable} -m pip install -r requirements.txt --user",
+            f"{sys.executable} -m pip install -r requirements.txt --break-system-packages",
+            "pip3 install -r requirements.txt",
+            "pip3 install -r requirements.txt --user", 
+            "pip3 install -r requirements.txt --break-system-packages",
+            "pip install -r requirements.txt",
+            "pip install -r requirements.txt --user",
+            "pip install -r requirements.txt --break-system-packages"
+        ]
         
         for pip_cmd in pip_commands:
             try:
+                print(f"🔄 Trying: {pip_cmd}")
                 result = subprocess.run(
-                    f"{pip_cmd} install -r requirements.txt".split(),
+                    pip_cmd.split(),
                     check=True,
                     capture_output=True,
                     text=True
                 )
                 print("✅ Python dependencies installed successfully")
                 return True
-            except (subprocess.CalledProcessError, FileNotFoundError):
+            except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                print(f"⚠️  Command failed: {e}")
                 continue
         
         print("❌ Failed to install dependencies with any pip command")
+        print("💡 Try creating a virtual environment:")
+        print("   python3 -m venv prdy-env")
+        print("   source prdy-env/bin/activate")
+        print("   pip install -r requirements.txt")
         return False
         
     except Exception as e:
@@ -86,23 +102,35 @@ def install_dependencies():
         return False
 
 def install_package():
-    """Install the PRD generator package"""
-    print("\n📦 Installing PRD Generator package...")
+    """Install the PRDY package"""
+    print("\n📦 Installing PRDY package...")
     
     try:
-        pip_commands = ["pip", "pip3", f"{sys.executable} -m pip"]
+        pip_commands = [
+            f"{sys.executable} -m pip install -e .",
+            f"{sys.executable} -m pip install -e . --user",
+            f"{sys.executable} -m pip install -e . --break-system-packages",
+            "pip3 install -e .",
+            "pip3 install -e . --user",
+            "pip3 install -e . --break-system-packages",
+            "pip install -e .",
+            "pip install -e . --user",
+            "pip install -e . --break-system-packages"
+        ]
         
         for pip_cmd in pip_commands:
             try:
+                print(f"🔄 Trying: {pip_cmd}")
                 result = subprocess.run(
-                    f"{pip_cmd} install -e .".split(),
+                    pip_cmd.split(),
                     check=True,
                     capture_output=True,
                     text=True
                 )
-                print("✅ PRD Generator package installed successfully")
+                print("✅ PRDY package installed successfully")
                 return True
-            except (subprocess.CalledProcessError, FileNotFoundError):
+            except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                print(f"⚠️  Command failed: {e}")
                 continue
         
         print("❌ Failed to install package")
