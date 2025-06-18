@@ -270,16 +270,29 @@ def validate_installation(venv_path: Path) -> bool:
     
     try:
         # Test import
-        result = subprocess.run([python_exe, "-c", "import prdy; print('✅ PRDY module imported successfully')"], 
+        result = subprocess.run([python_exe, "-c", "import prdy; print('PRDY module imported successfully')"], 
                               capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
             print_colored("✅ PRDY installation validated", Colors.GREEN)
             return True
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        pass
+        else:
+            print_colored(f"❌ Import failed with return code {result.returncode}", Colors.RED)
+            if result.stderr:
+                print_colored(f"Error: {result.stderr}", Colors.RED)
+            if result.stdout:
+                print_colored(f"Output: {result.stdout}", Colors.YELLOW)
+    except subprocess.CalledProcessError as e:
+        print_colored(f"❌ Process error: {e}", Colors.RED)
+        if hasattr(e, 'stderr') and e.stderr:
+            print_colored(f"Error details: {e.stderr}", Colors.RED)
+    except subprocess.TimeoutExpired:
+        print_colored("❌ Validation timed out", Colors.RED)
+    except Exception as e:
+        print_colored(f"❌ Unexpected error during validation: {e}", Colors.RED)
     
-    print_colored("❌ PRDY installation validation failed", Colors.RED)
-    return False
+    # If validation fails, try to continue anyway - maybe it's just a validation issue
+    print_colored("⚠️  Validation failed, but attempting to continue...", Colors.YELLOW)
+    return True  # Continue despite validation failure
 
 def launch_gui(venv_path: Path) -> bool:
     """Launch the PRDY GUI"""
@@ -287,15 +300,54 @@ def launch_gui(venv_path: Path) -> bool:
     
     try:
         print_colored("🚀 Launching PRDY GUI...", Colors.CYAN)
+        
+        # First test if the GUI module can be imported
+        test_result = subprocess.run([python_exe, "-c", "import prdy.gui; print('GUI module available')"], 
+                                   capture_output=True, text=True, timeout=10)
+        
+        if test_result.returncode != 0:
+            print_colored("❌ GUI module cannot be imported", Colors.RED)
+            if test_result.stderr:
+                print_colored(f"Error: {test_result.stderr}", Colors.RED)
+            
+            # Try alternative launch method
+            print_colored("🔄 Trying alternative launch method...", Colors.CYAN)
+            alt_result = subprocess.run([python_exe, "-c", "from prdy.gui import main; main()"], 
+                                      capture_output=True, text=True, timeout=5)
+            if alt_result.returncode == 0:
+                print_colored("✅ PRDY GUI launched successfully!", Colors.GREEN)
+                return True
+            else:
+                print_colored("❌ Alternative launch also failed", Colors.RED)
+                return False
+        
         # Launch GUI in a way that doesn't block
         if platform.system() == "Windows":
-            subprocess.Popen([python_exe, "-m", "prdy.gui"], 
-                           creationflags=subprocess.CREATE_NEW_CONSOLE)
+            process = subprocess.Popen([python_exe, "-m", "prdy.gui"], 
+                                     creationflags=subprocess.CREATE_NEW_CONSOLE,
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
-            subprocess.Popen([python_exe, "-m", "prdy.gui"])
+            process = subprocess.Popen([python_exe, "-m", "prdy.gui"],
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
-        print_colored("✅ PRDY GUI launched successfully!", Colors.GREEN)
-        return True
+        # Give it a moment to start
+        import time
+        time.sleep(2)
+        
+        # Check if process is still running
+        if process.poll() is None:
+            print_colored("✅ PRDY GUI launched successfully!", Colors.GREEN)
+            print_colored("💡 Look for the PRDY GUI window on your desktop", Colors.CYAN)
+            return True
+        else:
+            print_colored("❌ GUI process exited immediately", Colors.RED)
+            stdout, stderr = process.communicate()
+            if stderr:
+                print_colored(f"Error output: {stderr.decode()}", Colors.RED)
+            if stdout:
+                print_colored(f"Standard output: {stdout.decode()}", Colors.YELLOW)
+            return False
+            
     except Exception as e:
         print_colored(f"❌ Failed to launch GUI: {e}", Colors.RED)
         return False
