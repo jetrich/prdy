@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prdy"
+version = "0.1.0"
+description = "AI-powered Product Requirements Document Generator"
+authors = [{name = "PRDY Team"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["prd", "requirements", "documentation", "ai", "product-management"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business",
+    "Topic :: Software Development :: Documentation",
+]
+dependencies = [
+    "click>=8.1.7",
+    "rich>=13.7.0",
+    "pydantic>=2.5.3",
+    "sqlalchemy>=2.0.25",
+    "alembic>=1.13.1",
+    "jinja2>=3.1.2",
+    "reportlab>=4.0.8",
+    "markdown>=3.5.2",
+    "pyyaml>=6.0.1",
+    "python-dotenv>=1.0.0",
+    "questionary>=2.0.1",
+    "requests>=2.31.0",
+    "flet>=0.21.2",
+    "psutil>=5.9.8",
+]
+
+[project.scripts]
+prdy = "prdy.cli:main"
+prdy-gui = "prdy.gui:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jetrich/prdy"
+Repository = "https://github.com/jetrich/prdy"
+Issues = "https://github.com/jetrich/prdy/issues"
+Documentation = "https://github.com/jetrich/prdy#readme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["prdy*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
