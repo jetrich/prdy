@@ -39,7 +39,24 @@
 
 ## Installation
 
-### 🚀 **One-Command Setup (Recommended)**
+### 🖥️ **GUI Launcher (Easiest - New!)**
+
+**Windows (Double-click):**
+1. Download/clone the repository
+2. Double-click `launch_prdy_gui.bat`
+
+**macOS/Linux (Double-click):**
+1. Download/clone the repository  
+2. Double-click `launch_prdy_gui.sh` or run `./launch_prdy_gui.sh`
+
+**Any Platform (Command line):**
+```bash
+git clone https://github.com/jetrich/prdy.git
+cd prdy
+python3 launch_gui.py
+```
+
+### 🚀 **One-Command CLI Setup**
 
 **Linux/macOS:**
 ```bash
@@ -137,7 +154,17 @@ brew install python
 
 ## Quick Start
 
-### Create a New PRD
+### GUI Interface (Recommended)
+
+```bash
+# Launch GUI directly
+python3 launch_gui.py
+
+# Or use command after setup
+prdy-gui
+```
+
+### CLI Interface
 
 ```bash
 prdy new
